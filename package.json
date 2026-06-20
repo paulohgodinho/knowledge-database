@@ -1,0 +1,12 @@
+{
+  "name": "knowledge-database-assets",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./web/input.css -o ./web/static/output.css --minify"
+  },
+  "devDependencies": {
+    "daisyui": "^4.12.24",
+    "tailwindcss": "^3.4.17"
+  }
+}

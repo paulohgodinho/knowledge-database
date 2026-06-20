@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: knowledge-database-app
+    env_file:
+      - .env
+    environment:
+      - GITHUB_PAT=${GITHUB_PAT}
+      - GITHUB_REPO_URL=${GITHUB_REPO_URL}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./repo:/app/repo

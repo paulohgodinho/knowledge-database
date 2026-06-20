@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+  <link href="/static/output.css" rel="stylesheet">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="min-h-screen bg-base-200">
+  <main class="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6">
+    <form
+      id="share-form"
+      class="w-full"
+      hx-post="/share"
+      hx-target="#share-result"
+      hx-swap="innerHTML"
+    >
+      <label class="input input-bordered input-lg flex items-center gap-2 w-full">
+        <input
+          id="share-url"
+          name="url"
+          type="url"
+          class="grow"
+          placeholder="{{ .Placeholder }}"
+          required
+          autocomplete="off"
+          inputmode="url"
+        >
+      </label>
+      <div class="mt-4 flex justify-center">
+        <button type="submit" class="btn btn-primary">Share URL</button>
+      </div>
+      <div id="share-result"></div>
+    </form>
+  </main>
+
+  <script>
+    (function () {
+      const form = document.getElementById("share-form");
+      const input = document.getElementById("share-url");
+
+      function isValidHttpUrl(value) {
+        try {
+          const url = new URL(value);
+          return url.protocol === "http:" || url.protocol === "https:";
+        } catch (_) {
+          return false;
+        }
+      }
+
+      form.addEventListener("submit", function (event) {
+        const value = input.value.trim();
+        if (!isValidHttpUrl(value)) {
+          input.setCustomValidity("Please enter a valid http:// or https:// URL");
+          input.reportValidity();
+          event.preventDefault();
+          return;
+        }
+
+        input.setCustomValidity("");
+      });
+
+      input.addEventListener("input", function () {
+        input.setCustomValidity("");
+      });
+    })();
+  </script>
+</body>
+</html>
