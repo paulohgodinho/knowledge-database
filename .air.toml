@@ -1,0 +1,23 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "npm run build:css && go build -o ./tmp/server ./cmd/server"
+bin = "./tmp/server"
+full_bin = "./tmp/server"
+include_ext = ["go", "html", "tmpl", "tpl"]
+exclude_dir = ["tmp", ".git", "node_modules", "database", "repo"]
+exclude_regex = ["_test\\.go"]
+poll = true
+poll_interval = 500
+delay = 500
+stop_on_error = true
+
+[log]
+time = true
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"

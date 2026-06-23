@@ -9,6 +9,7 @@ if errorlevel 1 (
 )
 
 echo [run.bat] Building and starting stack in attached mode...
+echo [run.bat] Open: http://127.0.0.1:8080
 docker compose up --build
 
 endlocal

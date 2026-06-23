@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     container_name: knowledge-database-app
     env_file:
       - .env
@@ -10,6 +11,22 @@ services:
       - GITHUB_PAT=${GITHUB_PAT}
       - GITHUB_REPO_URL=${GITHUB_REPO_URL}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
+      - ./cmd:/app/cmd
+      - ./web:/app/web
+      - ./go.mod:/app/go.mod
+      - ./go.sum:/app/go.sum
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./.air.toml:/app/.air.toml
       - ./repo:/app/repo
+      - node-modules:/app/node_modules
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+
+volumes:
+  node-modules:
+  go-mod-cache:
+  go-build-cache:

@@ -1,44 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="bg-base-200">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ .Title }}</title>
-  <link href="/static/output.css" rel="stylesheet">
+  <link href="/static/output.css?v={{ .StylesVersion }}" rel="stylesheet">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body class="min-h-screen bg-base-200">
-  <main class="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6">
-    <form
-      id="share-form"
-      class="w-full"
-      hx-post="/share"
-      hx-target="#share-result"
-      hx-swap="innerHTML"
-    >
-      <label class="input input-bordered input-lg flex items-center gap-2 w-full">
-        <input
-          id="share-url"
-          name="url"
-          type="url"
-          class="grow"
-          placeholder="{{ .Placeholder }}"
-          required
-          autocomplete="off"
-          inputmode="url"
+  <main class="mx-auto max-w-3xl px-6 pt-[calc(50vh+6rem)]">
+    <section class="fixed inset-x-0 top-1/2 z-10 -translate-y-1/2 px-6">
+      <div class="mx-auto max-w-3xl">
+        <form
+          id="share-form"
+          class="w-full"
+          hx-post="/share"
+          hx-target="#share-feed"
+          hx-swap="afterbegin"
         >
-      </label>
-      <div class="mt-4 flex justify-center">
-        <button type="submit" class="btn btn-primary">Share URL</button>
+          <label class="input input-bordered input-lg flex items-center gap-2 w-full">
+            <input
+              id="share-url"
+              name="url"
+              type="url"
+              class="grow"
+              placeholder="{{ .Placeholder }}"
+              required
+              autocomplete="off"
+              inputmode="url"
+            >
+          </label>
+          <div class="mt-4 flex justify-center">
+            <button id="share-submit" type="submit" class="btn btn-primary">Share URL</button>
+          </div>
+        </form>
       </div>
-      <div id="share-result"></div>
-    </form>
+    </section>
+
+    <section id="share-feed" class="mx-auto space-y-3 pb-8"></section>
   </main>
 
   <script>
     (function () {
       const form = document.getElementById("share-form");
       const input = document.getElementById("share-url");
+      const submitButton = document.getElementById("share-submit");
+      const feed = document.getElementById("share-feed");
+
+      function setBusy(isBusy) {
+        input.disabled = isBusy;
+        submitButton.disabled = isBusy;
+      }
+
+      function appendNetworkErrorCard(url, message) {
+        const card = document.createElement("article");
+        card.className = "card bg-base-100 shadow-md border border-error/40";
+
+        const cardBody = document.createElement("div");
+        cardBody.className = "card-body p-4";
+
+        const urlLabel = document.createElement("p");
+        urlLabel.className = "text-sm text-base-content/70";
+        urlLabel.textContent = "Shared page";
+
+        const urlValue = document.createElement("p");
+        urlValue.className = "break-all";
+        urlValue.textContent = url || "(no URL provided)";
+
+        const title = document.createElement("p");
+        title.className = "text-sm text-base-content/70 mt-2";
+        title.textContent = "Error";
+
+        const detail = document.createElement("p");
+        detail.className = "text-error break-words";
+        detail.textContent = message;
+
+        cardBody.appendChild(urlLabel);
+        cardBody.appendChild(urlValue);
+        cardBody.appendChild(title);
+        cardBody.appendChild(detail);
+        card.appendChild(cardBody);
+        feed.prepend(card);
+      }
 
       function isValidHttpUrl(value) {
         try {
@@ -61,8 +104,53 @@
         input.setCustomValidity("");
       });
 
+      form.addEventListener("htmx:beforeRequest", function () {
+        setBusy(true);
+      });
+
       input.addEventListener("input", function () {
         input.setCustomValidity("");
+      });
+
+      form.addEventListener("htmx:afterRequest", function (event) {
+        setBusy(false);
+
+        if (event.detail.xhr.status >= 200 && event.detail.xhr.status < 300) {
+          form.reset();
+          input.focus();
+        }
+      });
+
+      // HTMX does not swap 4xx/5xx responses by default. Force swap so
+      // backend error cards are visible in the same stacked feed.
+      form.addEventListener("htmx:beforeSwap", function (event) {
+        if (event.detail.xhr.status >= 400) {
+          event.detail.shouldSwap = true;
+          event.detail.target = feed;
+          event.detail.swapOverride = "afterbegin";
+        }
+      });
+
+      form.addEventListener("htmx:responseError", function (event) {
+        setBusy(false);
+        const attemptedUrl = input.value.trim();
+        const responseText = (event.detail && event.detail.xhr && event.detail.xhr.responseText) || "";
+        console.error("Share request failed", {
+          attemptedUrl,
+          status: event.detail && event.detail.xhr ? event.detail.xhr.status : null,
+          responseText: responseText,
+        });
+      });
+
+      form.addEventListener("htmx:sendError", function () {
+        setBusy(false);
+        const attemptedUrl = input.value.trim();
+        const message = "Unable to reach the server. Please try again.";
+        console.error("Share network error", {
+          attemptedUrl,
+          error: message,
+        });
+        appendNetworkErrorCard(attemptedUrl, message);
       });
     })();
   </script>
